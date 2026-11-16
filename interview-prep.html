@@ -1,0 +1,773 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>Dev Interview Prep</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+  /* Layout: fixed top toolbar (search + filters + test mode) over a single reading column of collapsible Q&A cards grouped by topic. */
+  :root {
+    --bg: #f7f6f3;
+    --surface: #ffffff;
+    --surface-2: #f0efe9;
+    --fg: #1f2328;
+    --muted: #6b7280;
+    --line: #e4e2da;
+    --accent: #0a6b5b;        /* deep teal */
+    --accent-soft: #d9efe9;
+    --accent-ink: #064a3f;
+    --code-bg: #f3f1ea;
+    --code-fg: #334155;
+    --b: #7c3aed;  /* Basic */
+    --i: #c2410c;  /* Intermediate */
+    --a: #b91c1c;  /* Advanced */
+    --shadow: 0 1px 2px rgba(20,25,30,.06), 0 6px 20px rgba(20,25,30,.05);
+    --sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --serif: "Fraunces", Georgia, "Times New Roman", serif;
+    --mono: ui-monospace, "SF Mono", "Cascadia Code", "Consolas", monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #14161a;
+      --surface: #1c1f25;
+      --surface-2: #23272f;
+      --fg: #e8e9ec;
+      --muted: #9aa3af;
+      --line: #2c313a;
+      --accent: #37c8ab;
+      --accent-soft: #123a33;
+      --accent-ink: #8fe6d4;
+      --code-bg: #15181d;
+      --code-fg: #c9d4e0;
+      --b: #c4b5fd;
+      --i: #fdba74;
+      --a: #fca5a5;
+      --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.35);
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #14161a;
+    --surface: #1c1f25;
+    --surface-2: #23272f;
+    --fg: #e8e9ec;
+    --muted: #9aa3af;
+    --line: #2c313a;
+    --accent: #37c8ab;
+    --accent-soft: #123a33;
+    --accent-ink: #8fe6d4;
+    --code-bg: #15181d;
+    --code-fg: #c9d4e0;
+    --b: #c4b5fd;
+    --i: #fdba74;
+    --a: #fca5a5;
+    --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.35);
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--sans); line-height: 1.55; -webkit-font-smoothing: antialiased; }
+
+  .wrap { max-width: 920px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+
+  /* Header */
+  header.hero { padding-block: 30px 10px; }
+  .eyebrow { font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--accent-ink); font-weight: 600; }
+  h1 { font-family: var(--serif); font-weight: 600; font-size: clamp(28px, 6vw, 40px); margin: 6px 0 4px; letter-spacing: -.01em; text-wrap: balance; }
+  .sub { color: var(--muted); margin: 0; font-size: 15px; }
+  .stats { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+  .stat { background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 5px 12px; font-size: 12.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .stat b { color: var(--fg); font-weight: 600; }
+
+  /* Sticky toolbar */
+  .toolbar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; background: color-mix(in srgb, var(--bg) 86%, transparent); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); padding-block: 10px; margin-top: 10px; }
+  body::before { content:""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); background: var(--bg); z-index: 21; }
+  .search { width: 100%; font-size: 15px; font-family: inherit; color: var(--fg); background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 11px 14px; outline: none; }
+  .search:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+  .controls { display: flex; flex-wrap: wrap; gap: 7px; align-items: center; margin-top: 9px; }
+  .chip { font-family: inherit; font-size: 12.5px; cursor: pointer; border: 1px solid var(--line); background: var(--surface); color: var(--fg); border-radius: 999px; padding: 6px 12px; transition: .15s; white-space: nowrap; }
+  .chip:hover { border-color: var(--accent); }
+  .chip[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+  :root[data-theme="dark"] .chip[aria-pressed="true"], :root:not([data-theme="light"]) .chip[aria-pressed="true"] { color: #06120f; }
+  @media (prefers-color-scheme: light) { :root:not([data-theme="dark"]) .chip[aria-pressed="true"] { color:#fff; } }
+  .spacer { flex: 1 1 auto; min-width: 8px; }
+  .toggle { font-family: inherit; font-size: 12.5px; cursor: pointer; border: 1px solid var(--accent); background: transparent; color: var(--accent-ink); border-radius: 999px; padding: 6px 13px; font-weight: 600; white-space: nowrap; }
+  .toggle:hover { background: var(--accent-soft); }
+
+  /* Sections */
+  main { padding-block: 10px 60px; }
+  section { margin-top: 26px; scroll-margin-top: 120px; }
+  .sec-head { display: flex; align-items: baseline; gap: 10px; border-bottom: 2px solid var(--line); padding-bottom: 7px; margin-bottom: 12px; }
+  .sec-head h2 { font-family: var(--serif); font-weight: 600; font-size: 22px; margin: 0; }
+  .sec-head .count { font-size: 12.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+  /* Q&A cards */
+  .qa { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; margin-bottom: 9px; box-shadow: var(--shadow); overflow: hidden; }
+  .q { display: flex; gap: 10px; align-items: flex-start; width: 100%; text-align: left; cursor: pointer; background: none; border: 0; font-family: inherit; color: var(--fg); font-size: 15.5px; font-weight: 550; line-height: 1.45; padding: 14px 16px; }
+  .q:hover { background: var(--surface-2); }
+  .q .num { font-variant-numeric: tabular-nums; color: var(--muted); font-size: 13px; font-weight: 600; min-width: 30px; padding-top: 1px; }
+  .q .qt { flex: 1 1 auto; min-width: 0; }
+  .q .lvl { font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; padding: 2px 7px; border-radius: 6px; align-self: center; white-space: nowrap; }
+  .lvl.B { color: var(--b); background: color-mix(in srgb, var(--b) 15%, transparent); }
+  .lvl.I { color: var(--i); background: color-mix(in srgb, var(--i) 15%, transparent); }
+  .lvl.A { color: var(--a); background: color-mix(in srgb, var(--a) 15%, transparent); }
+  .q .caret { color: var(--muted); transition: transform .2s; font-size: 13px; align-self: center; }
+  .qa.open .caret { transform: rotate(90deg); }
+  .ans { padding: 0 16px 15px 56px; font-size: 14.5px; color: var(--fg); border-top: 1px solid transparent; }
+  .ans p { margin: 2px 0 9px; }
+  .ans p:last-child { margin-bottom: 0; }
+  .ans ul { margin: 2px 0 9px; padding-left: 18px; }
+  .ans li { margin: 3px 0; }
+  .ans code { font-family: var(--mono); font-size: 12.8px; background: var(--code-bg); color: var(--code-fg); padding: 1.5px 5px; border-radius: 5px; }
+  .ans pre { background: var(--code-bg); color: var(--code-fg); font-family: var(--mono); font-size: 12.6px; line-height: 1.5; padding: 11px 13px; border-radius: 9px; overflow-x: auto; margin: 6px 0 10px; border: 1px solid var(--line); }
+  .ans pre code { background: none; padding: 0; font-size: inherit; }
+  .ans strong { color: var(--accent-ink); font-weight: 650; }
+
+  .noresult { text-align: center; color: var(--muted); padding: 40px 10px; display: none; }
+  footer { text-align: center; color: var(--muted); font-size: 12.5px; padding-block: 10px 40px; }
+  @media (max-width: 480px){ .ans { padding-left: 16px; } }
+
+  /* AI Mock Interview */
+  .mock-cta { display: inline-flex; align-items: center; gap: 8px; margin-top: 16px; font-family: inherit; font-size: 14.5px; font-weight: 600; cursor: pointer; border: 0; border-radius: 11px; padding: 11px 18px; color: #fff; background: linear-gradient(135deg, var(--accent), #0d8c76); box-shadow: var(--shadow); transition: transform .12s, filter .12s; }
+  :root[data-theme="dark"] .mock-cta, :root:not([data-theme="light"]) .mock-cta { color: #04130f; }
+  @media (prefers-color-scheme: light){ :root:not([data-theme="dark"]) .mock-cta { color:#fff; } }
+  .mock-cta:hover { transform: translateY(-1px); filter: brightness(1.05); }
+  .mock-cta[hidden] { display: none; }
+
+  .overlay { position: fixed; inset: 0; z-index: 50; background: color-mix(in srgb, var(--bg) 70%, #000 30%); backdrop-filter: blur(4px); display: flex; align-items: flex-start; justify-content: center; overflow-y: auto; padding: max(16px, env(safe-area-inset-top,0px)) 16px 40px; }
+  .overlay[hidden] { display: none; }
+  .modal { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; box-shadow: 0 20px 60px rgba(0,0,0,.35); width: 100%; max-width: 640px; margin-top: 24px; overflow: hidden; }
+  .modal-head { display: flex; align-items: center; gap: 10px; padding: 16px 18px; border-bottom: 1px solid var(--line); background: var(--surface-2); }
+  .modal-head h3 { font-family: var(--serif); font-size: 18px; margin: 0; flex: 1 1 auto; }
+  .modal-head .close { background: none; border: 0; cursor: pointer; color: var(--muted); font-size: 22px; line-height: 1; padding: 2px 6px; border-radius: 8px; }
+  .modal-head .close:hover { background: var(--line); color: var(--fg); }
+  .modal-body { padding: 18px; }
+  .mi-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 14px; }
+  .mi-select { font-family: inherit; font-size: 13px; color: var(--fg); background: var(--bg); border: 1px solid var(--line); border-radius: 9px; padding: 7px 10px; }
+  .mi-score-tag { margin-left: auto; font-size: 12.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .mi-qcard { background: var(--accent-soft); border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent); border-radius: 12px; padding: 15px 16px; }
+  .mi-qmeta { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
+  .mi-topic { font-size: 11px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--accent-ink); }
+  .mi-q { font-size: 16px; font-weight: 600; line-height: 1.4; color: var(--fg); }
+  .mi-q code { font-family: var(--mono); font-size: 13.5px; background: var(--code-bg); padding: 1px 5px; border-radius: 5px; }
+  .mi-answer { width: 100%; margin-top: 14px; font-family: inherit; font-size: 14.5px; color: var(--fg); background: var(--bg); border: 1px solid var(--line); border-radius: 11px; padding: 12px 14px; min-height: 110px; resize: vertical; outline: none; line-height: 1.5; }
+  .mi-answer:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+  .mi-actions { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 13px; }
+  .mi-btn { font-family: inherit; font-size: 14px; font-weight: 600; cursor: pointer; border-radius: 10px; padding: 10px 16px; border: 1px solid var(--line); background: var(--surface); color: var(--fg); transition: .12s; }
+  .mi-btn:hover { border-color: var(--accent); }
+  .mi-btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  :root[data-theme="dark"] .mi-btn.primary, :root:not([data-theme="light"]) .mi-btn.primary { color:#04130f; }
+  @media (prefers-color-scheme: light){ :root:not([data-theme="dark"]) .mi-btn.primary { color:#fff; } }
+  .mi-btn:disabled { opacity: .5; cursor: default; }
+  .mi-feedback { margin-top: 16px; border-top: 1px dashed var(--line); padding-top: 15px; }
+  .mi-feedback[hidden] { display: none; }
+  .mi-thinking { display: flex; align-items: center; gap: 9px; color: var(--muted); font-size: 14px; margin-top: 16px; }
+  .mi-thinking[hidden] { display: none; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); animation: pulse 1s infinite ease-in-out; }
+  @keyframes pulse { 0%,100%{ opacity:.3; transform:scale(.8);} 50%{ opacity:1; transform:scale(1.1);} }
+  @media (prefers-reduced-motion: reduce){ .dot { animation: none; } }
+  .mi-scorebar { display: flex; align-items: center; gap: 14px; margin-bottom: 12px; }
+  .mi-ring { --p: 0; width: 62px; height: 62px; border-radius: 50%; display: grid; place-items: center; flex: 0 0 auto; background: conic-gradient(var(--ring) calc(var(--p)*1%), var(--line) 0); }
+  .mi-ring span { width: 48px; height: 48px; border-radius: 50%; background: var(--surface); display: grid; place-items: center; font-weight: 700; font-size: 18px; font-variant-numeric: tabular-nums; }
+  .mi-verdict { font-size: 15px; font-weight: 600; }
+  .mi-fb-group { margin-top: 12px; }
+  .mi-fb-group h4 { font-size: 12px; letter-spacing: .05em; text-transform: uppercase; margin: 0 0 6px; }
+  .mi-fb-group.good h4 { color: #16a34a; }
+  .mi-fb-group.gaps h4 { color: var(--i); }
+  .mi-fb-group ul { margin: 0; padding-left: 18px; font-size: 14px; }
+  .mi-fb-group li { margin: 4px 0; }
+  .mi-tip { margin-top: 12px; background: var(--surface-2); border-radius: 10px; padding: 11px 13px; font-size: 13.5px; }
+  .mi-tip b { color: var(--accent-ink); }
+  .mi-ideal { margin-top: 12px; }
+  .mi-ideal summary { cursor: pointer; font-size: 13.5px; font-weight: 600; color: var(--accent-ink); }
+  .mi-ideal .ideal-body { margin-top: 8px; font-size: 14px; background: var(--code-bg); border-radius: 10px; padding: 12px 14px; }
+  .mi-ideal .ideal-body code { font-family: var(--mono); font-size: 12.8px; }
+  .mi-ideal .ideal-body pre { background: var(--bg); padding: 10px; border-radius: 8px; overflow-x: auto; font-family: var(--mono); font-size: 12.4px; }
+  .mi-err { margin-top: 14px; color: var(--a); font-size: 13.5px; }
+  .mi-unavail { font-size: 13.5px; color: var(--muted); line-height: 1.5; }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="hero">
+    <div class="eyebrow">Angular Â· Node Developer</div>
+    <h1>Interview Prep Workbook</h1>
+    <p class="sub">Basic to advanced Q&amp;A â€” Angular, JavaScript, TypeScript, RxJS, NgRx, Node.js &amp; MSSQL. Tap a question to reveal the answer.</p>
+    <div class="stats" id="stats"></div>
+    <button class="mock-cta" id="startMock" hidden>ðŸŽ¤ Start AI Mock Interview</button>
+  </header>
+</div>
+
+<div class="overlay" id="mockOverlay" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-label="AI Mock Interview">
+    <div class="modal-head">
+      <h3>ðŸŽ¤ AI Mock Interview</h3>
+      <button class="close" id="mockClose" aria-label="Close">Ã—</button>
+    </div>
+    <div class="modal-body">
+      <div class="mi-row">
+        <label style="font-size:13px;color:var(--muted);">Focus:</label>
+        <select class="mi-select" id="mockTopic"></select>
+        <span class="mi-score-tag" id="mockScoreTag"></span>
+      </div>
+
+      <div id="mockStage">
+        <div class="mi-qcard">
+          <div class="mi-qmeta"><span class="mi-topic" id="mockQTopic"></span><span class="lvl" id="mockQLvl"></span></div>
+          <div class="mi-q" id="mockQ"></div>
+        </div>
+        <textarea class="mi-answer" id="mockInput" placeholder="Type your answer the way you'd say it out loudâ€¦ then get instant AI feedback."></textarea>
+        <div class="mi-actions">
+          <button class="mi-btn primary" id="mockSubmit">Get feedback</button>
+          <button class="mi-btn" id="mockSkip">Skip / Next â†»</button>
+        </div>
+
+        <div class="mi-thinking" id="mockThinking" hidden><span class="dot"></span> Claude is reviewing your answerâ€¦</div>
+        <div class="mi-err" id="mockErr" hidden></div>
+
+        <div class="mi-feedback" id="mockFeedback" hidden>
+          <div class="mi-scorebar">
+            <div class="mi-ring" id="mockRing"><span id="mockScore">â€“</span></div>
+            <div class="mi-verdict" id="mockVerdict"></div>
+          </div>
+          <div class="mi-fb-group good" id="mockGoodWrap"><h4>âœ“ What worked</h4><ul id="mockGood"></ul></div>
+          <div class="mi-fb-group gaps" id="mockGapsWrap"><h4>â–³ What to add</h4><ul id="mockGaps"></ul></div>
+          <div class="mi-tip" id="mockTip"></div>
+          <details class="mi-ideal"><summary>ðŸ“– Show the ideal answer</summary><div class="ideal-body" id="mockIdeal"></div></details>
+          <div class="mi-actions"><button class="mi-btn primary" id="mockNext">Next question â†’</button></div>
+        </div>
+      </div>
+
+      <div class="mi-unavail" id="mockUnavail" hidden></div>
+    </div>
+  </div>
+</div>
+
+<div class="toolbar">
+  <div class="wrap">
+    <input id="search" class="search" type="search" placeholder="Search questions & answersâ€¦" autocomplete="off" aria-label="Search">
+    <div class="controls" id="topicFilters"></div>
+    <div class="controls">
+      <span style="font-size:12.5px;color:var(--muted);">Level:</span>
+      <button class="chip" data-lvl="B" aria-pressed="true">Basic</button>
+      <button class="chip" data-lvl="I" aria-pressed="true">Intermediate</button>
+      <button class="chip" data-lvl="A" aria-pressed="true">Advanced</button>
+      <span class="spacer"></span>
+      <button class="toggle" id="testMode" aria-pressed="false">ðŸ™ˆ Test mode</button>
+      <button class="toggle" id="expandAll">Expand all</button>
+    </div>
+  </div>
+</div>
+
+<main class="wrap">
+  <div id="list"></div>
+  <div class="noresult" id="noresult">No questions match your search.</div>
+</main>
+
+<footer class="wrap">Good luck, Niranjan â€” you've got this. ðŸ’ª</footer>
+
+<script>
+// ---------- DATA ----------
+// topic, level (B/I/A), q, a (HTML allowed)
+const DATA = [
+/* ============ ANGULAR ============ */
+["Angular","B","What is Angular and how is it different from AngularJS?","<p>Angular is a <strong>TypeScript-based front-end framework</strong> by Google for building single-page applications (SPAs). AngularJS (1.x) used JavaScript and a controller/scope model; Angular (2+) is a complete rewrite using components, TypeScript, better performance, and mobile support.</p>"],
+["Angular","B","What is a component?","<p>The basic building block of the UI. A class decorated with <code>@Component</code> that has a <strong>template</strong> (HTML), <strong>styles</strong>, and a <strong>selector</strong>. Each component controls a part of the screen.</p>"],
+["Angular","B","What is a module (NgModule)?","<p>A container that groups related components, directives, pipes, and services. The root module is <code>AppModule</code>. Angular 15+ also supports <strong>standalone components</strong> that don't need a module.</p>"],
+["Angular","B","What is Angular CLI and common commands?","<p>A command-line tool to scaffold, build, serve, and test apps.</p><ul><li><code>ng new app</code> â€“ create project</li><li><code>ng serve</code> â€“ run dev server</li><li><code>ng generate component x</code> â€“ scaffold</li><li><code>ng build --prod</code> â€“ production build</li></ul>"],
+["Angular","B","What is data binding? Types?","<p>Syncing data between the class and template. Four types:</p><ul><li><strong>Interpolation</strong> <code>{{ value }}</code></li><li><strong>Property binding</strong> <code>[src]=\"url\"</code></li><li><strong>Event binding</strong> <code>(click)=\"fn()\"</code></li><li><strong>Two-way</strong> <code>[(ngModel)]=\"name\"</code></li></ul>"],
+["Angular","B","What is a directive? Types?","<p>A class that adds behavior to elements.</p><ul><li><strong>Component</strong> â€“ directive with a template</li><li><strong>Structural</strong> â€“ change DOM layout: <code>*ngIf</code>, <code>*ngFor</code>, <code>*ngSwitch</code></li><li><strong>Attribute</strong> â€“ change appearance/behavior: <code>ngClass</code>, <code>ngStyle</code></li></ul>"],
+["Angular","B","What is a service and why use it?","<p>A reusable class for business logic, data access, or shared state. Keeps components lean (single responsibility). Marked with <code>@Injectable()</code> and shared via dependency injection.</p>"],
+["Angular","B","What is a pipe?","<p>Transforms data in the template without changing the source. Built-in: <code>date</code>, <code>currency</code>, <code>uppercase</code>, <code>async</code>. Usage: <code>{{ price | currency:'INR' }}</code>.</p>"],
+["Angular","I","Explain dependency injection (DI).","<p>A design pattern where Angular <strong>creates and supplies</strong> a class's dependencies instead of the class creating them. You declare them in the constructor; Angular's injector resolves them. Benefits: loose coupling, easier testing, singletons.</p><pre><code>constructor(private userSvc: UserService) {}</code></pre>"],
+["Angular","I","What are lifecycle hooks? Name the order.","<p>Methods Angular calls during a component's life:</p><p><code>ngOnChanges</code> â†’ <code>ngOnInit</code> â†’ <code>ngDoCheck</code> â†’ <code>ngAfterContentInit</code> â†’ <code>ngAfterContentChecked</code> â†’ <code>ngAfterViewInit</code> â†’ <code>ngAfterViewChecked</code> â†’ <code>ngOnDestroy</code>.</p><p>Most used: <strong>ngOnInit</strong> (setup/API calls), <strong>ngOnDestroy</strong> (cleanup/unsubscribe).</p>"],
+["Angular","I","Why use ngOnInit instead of the constructor?","<p>The constructor is for dependency injection only. <code>@Input()</code> values and bindings aren't available yet in the constructor â€” they're ready by <strong>ngOnInit</strong>, which runs once after the first change detection. Put API calls and initialization there.</p>"],
+["Angular","I","How does component communication work?","<ul><li><strong>Parent â†’ child:</strong> <code>@Input()</code></li><li><strong>Child â†’ parent:</strong> <code>@Output()</code> with <code>EventEmitter</code></li><li><strong>Parent â†’ child (direct access):</strong> <code>@ViewChild()</code></li><li><strong>Unrelated components:</strong> shared service with a <code>Subject</code>/<code>BehaviorSubject</code>, or a store (NgRx)</li></ul>"],
+["Angular","I","Template-driven vs Reactive forms?","<ul><li><strong>Template-driven:</strong> logic in HTML with <code>ngModel</code>; simple forms, easy but less scalable.</li><li><strong>Reactive:</strong> logic in TS with <code>FormGroup</code>/<code>FormControl</code>; scalable, testable, better for complex validation and dynamic forms.</li></ul>"],
+["Angular","I","How do you make HTTP requests?","<p>Inject <code>HttpClient</code> (from <code>HttpClientModule</code>). Methods return <strong>Observables</strong> you subscribe to.</p><pre><code>this.http.get&lt;User[]&gt;('/api/users')\n  .subscribe(users =&gt; this.users = users);</code></pre><p>Prefer the <code>async</code> pipe in templates to auto-subscribe/unsubscribe.</p>"],
+["Angular","I","What is an HTTP interceptor?","<p>A service that sits between the app and the server, intercepting every request/response. Common uses: <strong>attach JWT auth tokens</strong>, add headers, log, handle errors globally, show loaders.</p><pre><code>intercept(req, next) {\n  const cloned = req.clone({ setHeaders:{ Authorization:`Bearer ${token}` }});\n  return next.handle(cloned);\n}</code></pre>"],
+["Angular","I","What are route guards?","<p>Interfaces that control navigation. <code>CanActivate</code> (can enter route?), <code>CanDeactivate</code> (can leave?), <code>CanActivateChild</code>, <code>Resolve</code> (pre-fetch data), <code>CanLoad</code>. Common use: auth checks before loading a page.</p>"],
+["Angular","I","What is lazy loading and how to implement it?","<p>Loading feature modules only when their route is visited â€” shrinks the initial bundle and speeds first load.</p><pre><code>{ path: 'admin',\n  loadChildren: () =&gt; import('./admin/admin.module')\n    .then(m =&gt; m.AdminModule) }</code></pre>"],
+["Angular","A","Explain change detection. Default vs OnPush.","<p>Change detection syncs the model with the DOM. <strong>Default:</strong> Angular (via Zone.js) checks the whole component tree on every event/async task. <strong>OnPush:</strong> a component is checked only when an <code>@Input</code> reference changes, an event fires inside it, or an observable it uses (via <code>async</code> pipe) emits â€” big performance gain.</p><pre><code>@Component({ changeDetection: ChangeDetectionStrategy.OnPush })</code></pre>"],
+["Angular","A","What are Angular Signals?","<p>A reactive primitive (Angular 16+) for fine-grained reactivity. <code>signal()</code> holds a value, <code>computed()</code> derives one, <code>effect()</code> runs on change. Simpler than RxJS for component state and enables <strong>zoneless</strong> change detection.</p><pre><code>count = signal(0);\ndouble = computed(() =&gt; this.count() * 2);\nthis.count.set(5);</code></pre>"],
+["Angular","A","What is a standalone component?","<p>A component (Angular 14+) that declares its own imports and doesn't need an NgModule (<code>standalone: true</code>). Simplifies structure and is now the default in new apps. Bootstrapped with <code>bootstrapApplication()</code>.</p>"],
+["Angular","A","How do you prevent memory leaks from subscriptions?","<ul><li>Use the <code>async</code> pipe (auto-unsubscribes)</li><li><code>takeUntil(destroy$)</code> with a Subject completed in <code>ngOnDestroy</code></li><li><code>takeUntilDestroyed()</code> (Angular 16+)</li><li>Call <code>.unsubscribe()</code> manually</li></ul>"],
+["Angular","A","AOT vs JIT compilation?","<p><strong>AOT (Ahead-of-Time):</strong> templates compiled at build time â€” faster rendering, smaller bundle, catches template errors early; default for production. <strong>JIT (Just-in-Time):</strong> compiled in the browser at runtime â€” larger, slower, used historically for dev.</p>"],
+["Angular","A","What is content projection (ng-content)?","<p>Lets a component render HTML passed in from its parent â€” like building reusable wrappers (cards, modals). Use <code>&lt;ng-content&gt;</code>, with <code>select</code> for multi-slot projection.</p>"],
+
+/* ============ JAVASCRIPT ============ */
+["JavaScript","B","var vs let vs const?","<ul><li><code>var</code> â€“ function-scoped, hoisted, can redeclare</li><li><code>let</code> â€“ block-scoped, reassignable, no redeclare</li><li><code>const</code> â€“ block-scoped, can't reassign (but object contents can still change)</li></ul>"],
+["JavaScript","B","== vs ===?","<p><code>==</code> (loose) compares after <strong>type coercion</strong>; <code>===</code> (strict) compares <strong>value and type</strong>. Example: <code>0 == '0'</code> is true, <code>0 === '0'</code> is false. Always prefer <code>===</code>.</p>"],
+["JavaScript","B","null vs undefined?","<p><code>undefined</code> = a variable declared but not assigned (JS default). <code>null</code> = an intentional 'empty/no value' you assign. <code>typeof undefined</code> is 'undefined'; <code>typeof null</code> is 'object' (a historic bug).</p>"],
+["JavaScript","B","What are the primitive data types?","<p>String, Number, Boolean, Null, Undefined, Symbol, BigInt. Everything else (objects, arrays, functions) is a reference type.</p>"],
+["JavaScript","B","map vs forEach vs filter vs reduce?","<ul><li><code>forEach</code> â€“ loops, returns nothing</li><li><code>map</code> â€“ returns a new transformed array</li><li><code>filter</code> â€“ returns items matching a condition</li><li><code>reduce</code> â€“ boils the array down to a single value</li></ul>"],
+["JavaScript","I","What is hoisting?","<p>JS moves <strong>declarations</strong> to the top of their scope before execution. <code>var</code> and function declarations are hoisted (var = <code>undefined</code>); <code>let</code>/<code>const</code> are hoisted but stay in the <strong>temporal dead zone</strong> until declared, so accessing them early throws.</p>"],
+["JavaScript","I","What is a closure? Give an example.","<p>A function that <strong>remembers variables from its outer scope</strong> even after that scope has returned. Used for data privacy, counters, factories.</p><pre><code>function counter() {\n  let c = 0;\n  return () =&gt; ++c;\n}\nconst inc = counter();\ninc(); // 1\ninc(); // 2</code></pre>"],
+["JavaScript","I","Explain the 'this' keyword.","<p><code>this</code> refers to the object that <strong>calls</strong> the function. In a method it's the object; alone/in a regular function it's the global object (or undefined in strict mode); in an arrow function it's inherited from the enclosing scope. Can be set with <code>call</code>/<code>apply</code>/<code>bind</code>.</p>"],
+["JavaScript","I","Arrow functions vs regular functions?","<ul><li>Arrow functions have <strong>no own <code>this</code></strong> (inherit it), no <code>arguments</code>, can't be constructors, can't be generators.</li><li>Great for callbacks where you want the surrounding <code>this</code> (e.g. inside class methods).</li></ul>"],
+["JavaScript","I","Shallow copy vs deep copy?","<p><strong>Shallow</strong> copies the top level only â€” nested objects are shared by reference (<code>{...obj}</code>, <code>Object.assign</code>). <strong>Deep</strong> copies everything recursively (<code>structuredClone(obj)</code> or <code>JSON.parse(JSON.stringify(obj))</code>).</p>"],
+["JavaScript","I","What does {} === {} return? Why?","<p><code>false</code>. Objects and arrays are <strong>reference types</strong> â€” two different literals are different references in memory, even with identical contents. Equality compares references, not values.</p>"],
+["JavaScript","I","What is a Promise? States?","<p>An object representing a future async result. Three states: <strong>pending â†’ fulfilled â†’ rejected</strong>. Consumed with <code>.then()</code>/<code>.catch()</code> or <code>async/await</code>. <code>Promise.all</code> runs several in parallel; <code>Promise.race</code> resolves with the first.</p>"],
+["JavaScript","I","Explain async/await.","<p>Syntactic sugar over Promises for writing async code that reads like sync code. <code>await</code> pauses until a Promise resolves; wrap in <code>try/catch</code> for errors. The function returns a Promise.</p><pre><code>async function load() {\n  try {\n    const res = await fetch(url);\n    return await res.json();\n  } catch (e) { console.error(e); }\n}</code></pre>"],
+["JavaScript","I","Event bubbling vs capturing? Delegation?","<p><strong>Bubbling:</strong> event goes from target up to ancestors (default). <strong>Capturing:</strong> top-down. <strong>Event delegation:</strong> attach one listener to a parent and use <code>event.target</code> to handle many children â€” efficient for dynamic lists.</p>"],
+["JavaScript","A","Explain the event loop.","<p>JS is single-threaded. The <strong>call stack</strong> runs sync code. Async callbacks wait in queues; the event loop pushes them to the stack when it's empty. <strong>Microtasks</strong> (Promises, <code>queueMicrotask</code>) run before <strong>macrotasks</strong> (setTimeout, events) after each tick.</p>"],
+["JavaScript","A","Explain prototypal inheritance.","<p>Objects inherit from other objects via the <strong>prototype chain</strong>. When a property isn't found on an object, JS looks up its <code>__proto__</code> until it finds it or reaches null. <code>class</code> syntax is sugar over this.</p>"],
+["JavaScript","A","call vs apply vs bind?","<ul><li><code>call(thisArg, a, b)</code> â€“ invokes now with args listed</li><li><code>apply(thisArg, [a,b])</code> â€“ invokes now with args as array</li><li><code>bind(thisArg)</code> â€“ returns a new function with <code>this</code> fixed (call later)</li></ul>"],
+["JavaScript","A","What is debouncing vs throttling?","<p><strong>Debounce:</strong> run the function only after the user stops triggering it for N ms (search box). <strong>Throttle:</strong> run at most once per N ms (scroll/resize).</p><pre><code>const debounce = (fn, d) =&gt; {\n  let t;\n  return (...a) =&gt; {\n    clearTimeout(t);\n    t = setTimeout(() =&gt; fn(...a), d);\n  };\n};</code></pre>"],
+["JavaScript","A","Explain spread, rest, and destructuring.","<ul><li><strong>Spread</strong> <code>[...arr]</code> expands items (copy/merge)</li><li><strong>Rest</strong> <code>(...args)</code> collects remaining args into an array</li><li><strong>Destructuring</strong> <code>const {a, b} = obj</code> unpacks values</li></ul>"],
+
+/* ============ TYPESCRIPT ============ */
+["TypeScript","B","What is TypeScript and why use it?","<p>A typed superset of JavaScript that compiles to JS. Adds static types, interfaces, generics, enums â€” catching errors at <strong>compile time</strong>, enabling better tooling/autocomplete. Angular is built with it.</p>"],
+["TypeScript","B","interface vs type?","<p>Both describe object shapes. <strong>interface</strong> is extendable and can be merged (declaration merging), ideal for objects/classes. <strong>type</strong> is more flexible â€” supports unions, intersections, primitives, tuples.</p>"],
+["TypeScript","I","What are generics?","<p>Reusable components that work with any type while keeping type safety. <code>&lt;T&gt;</code> is a placeholder resolved at use.</p><pre><code>function identity&lt;T&gt;(x: T): T { return x; }\nidentity&lt;string&gt;('hi');</code></pre>"],
+["TypeScript","I","any vs unknown vs never?","<ul><li><code>any</code> â€“ disables type checking (avoid)</li><li><code>unknown</code> â€“ type-safe any; must narrow before use</li><li><code>never</code> â€“ value that never occurs (throws/infinite loops)</li></ul>"],
+["TypeScript","I","What are access modifiers?","<p><code>public</code> (default, accessible anywhere), <code>private</code> (only within the class), <code>protected</code> (class + subclasses), <code>readonly</code> (set once). In Angular, declaring them in the constructor auto-creates the property.</p>"],
+["TypeScript","A","enum vs union of literals?","<p>Both restrict to a set of values. <code>enum</code> generates runtime code; a <strong>literal union</strong> (<code>type Status = 'on' | 'off'</code>) is compile-time only, lighter, and often preferred.</p>"],
+
+/* ============ RXJS ============ */
+["RxJS","B","What is RxJS?","<p>A library for <strong>reactive programming</strong> using Observables â€” handling async data streams (events, HTTP, timers) with powerful operators. Core to Angular's HttpClient, forms, and router.</p>"],
+["RxJS","B","What is an Observable?","<p>A <strong>lazy, cancellable stream</strong> that can emit multiple values over time. Nothing runs until you <code>.subscribe()</code>. Values are pushed to the subscriber via next/error/complete.</p>"],
+["RxJS","B","Observable vs Promise?","<ul><li>Observable: multiple values, lazy, cancellable, has operators</li><li>Promise: single value, eager (runs immediately), not cancellable</li></ul>"],
+["RxJS","I","What is a Subject? Types?","<p>A special Observable that is <strong>both an observable and an observer</strong> â€” you can <code>next()</code> values into it. Types:</p><ul><li><strong>Subject</strong> â€“ no initial value, only future emissions</li><li><strong>BehaviorSubject</strong> â€“ holds/emits the latest value (needs initial)</li><li><strong>ReplaySubject</strong> â€“ replays past N values to new subscribers</li><li><strong>AsyncSubject</strong> â€“ emits only the last value on complete</li></ul>"],
+["RxJS","I","switchMap vs mergeMap vs concatMap vs exhaustMap?","<ul><li><strong>switchMap</strong> â€“ cancels the previous inner observable (search/autocomplete)</li><li><strong>mergeMap</strong> â€“ runs all in parallel (independent requests)</li><li><strong>concatMap</strong> â€“ queues in order, one at a time</li><li><strong>exhaustMap</strong> â€“ ignores new emissions while one is active (prevent double submit)</li></ul>"],
+["RxJS","I","What are common RxJS operators?","<ul><li><code>map</code>, <code>filter</code>, <code>tap</code> â€“ transform/inspect</li><li><code>debounceTime</code>, <code>distinctUntilChanged</code> â€“ search inputs</li><li><code>take</code>, <code>takeUntil</code> â€“ limit/unsubscribe</li><li><code>combineLatest</code>, <code>forkJoin</code> â€“ combine streams</li><li><code>catchError</code>, <code>retry</code> â€“ error handling</li></ul>"],
+["RxJS","A","forkJoin vs combineLatest?","<p><strong>forkJoin:</strong> waits for all observables to <strong>complete</strong>, then emits the last value of each once (like Promise.all). <strong>combineLatest:</strong> emits whenever <strong>any</strong> source emits, combining the latest of each (live).</p>"],
+["RxJS","A","How do you handle errors in RxJS?","<p>Use <code>catchError</code> to intercept and return a fallback observable (e.g. <code>of([])</code>), and <code>retry(n)</code>/<code>retryWhen</code> to re-attempt. Errors terminate the stream unless caught.</p>"],
+["RxJS","A","What is a hot vs cold observable?","<p><strong>Cold:</strong> produces values per subscriber, starts on subscribe (HTTP calls). <strong>Hot:</strong> shares one execution across subscribers, emits regardless of subscription (DOM events, Subjects). <code>share()</code> makes a cold one hot.</p>"],
+
+/* ============ NGRX ============ */
+["NgRx","B","What is NgRx and when use it?","<p>A <strong>Redux-style state management</strong> library for Angular, built on RxJS. Use it for large apps with lots of shared state to make state <strong>predictable, centralized, and debuggable</strong>. Small apps can just use a service with BehaviorSubject.</p>"],
+["NgRx","B","What are the core building blocks?","<ul><li><strong>Store</strong> â€“ single immutable source of state</li><li><strong>Action</strong> â€“ describes an event that happened</li><li><strong>Reducer</strong> â€“ pure function: (state, action) â†’ new state</li><li><strong>Selector</strong> â€“ reads slices of state</li><li><strong>Effect</strong> â€“ handles side effects (API calls)</li></ul>"],
+["NgRx","I","What is an action?","<p>A plain object describing <strong>what happened</strong>, with a <code>type</code> and optional payload. Created with <code>createAction</code>. Dispatched to the store to trigger state changes.</p><pre><code>export const loadUsers = createAction('[Users] Load');</code></pre>"],
+["NgRx","I","What is a reducer?","<p>A <strong>pure function</strong> that takes the current state and an action and returns a new state (never mutates). Built with <code>createReducer</code> and <code>on()</code> handlers.</p>"],
+["NgRx","I","What is a selector and why use it?","<p>A pure function to <strong>query/derive</strong> state from the store. <code>createSelector</code> memoizes results (recomputes only when inputs change) â€” good for performance. Components use <code>store.select(selector)</code>.</p>"],
+["NgRx","A","What is an Effect?","<p>Listens for dispatched actions, performs <strong>side effects</strong> (HTTP, routing), and dispatches new actions with the result. Keeps reducers pure. Built with <code>createEffect</code> + RxJS operators like <code>switchMap</code>.</p><pre><code>loadUsers$ = createEffect(() =&gt; this.actions$.pipe(\n  ofType(loadUsers),\n  switchMap(() =&gt; this.api.getUsers().pipe(\n    map(users =&gt; loadUsersSuccess({ users })))))\n);</code></pre>"],
+["NgRx","A","What is the unidirectional data flow in NgRx?","<p>Component <strong>dispatches</strong> an Action â†’ Reducer updates the Store (and/or Effect handles side effects) â†’ Component <strong>selects</strong> updated state. One direction = predictable, traceable (great with Redux DevTools).</p>"],
+["NgRx","A","NgRx vs a simple service with BehaviorSubject?","<p>A BehaviorSubject service is lighter and fine for small/medium apps. NgRx adds structure, DevTools time-travel, effects, and strict immutability â€” worth it for <strong>large teams and complex shared state</strong>, but it's more boilerplate.</p>"],
+
+/* ============ NODE / EXPRESS ============ */
+["Node.js","B","What is Node.js?","<p>A <strong>runtime</strong> that runs JavaScript outside the browser, built on Chrome's V8 engine. It's event-driven and non-blocking, ideal for scalable I/O-heavy apps (APIs, real-time).</p>"],
+["Node.js","B","Is Node single-threaded?","<p>JavaScript execution is single-threaded, but Node handles concurrency with a <strong>non-blocking event loop</strong> and a background thread pool (libuv) for I/O. So it serves many requests without a thread per request.</p>"],
+["Node.js","B","What is npm and package.json?","<p><strong>npm</strong> is Node's package manager (install/manage libraries). <strong>package.json</strong> holds project metadata, scripts, and dependencies. <code>package-lock.json</code> locks exact versions.</p>"],
+["Node.js","B","What is Express.js?","<p>A minimal, flexible <strong>web framework</strong> for Node â€” simplifies routing, middleware, and HTTP handling for building APIs and web apps.</p>"],
+["Node.js","B","How do you start a Node server?","<p><code>node app.js</code>, or <code>npm start</code> (runs the start script), or <code>nodemon app.js</code> in development (auto-restarts on file changes).</p>"],
+["Node.js","I","Explain the event loop in Node.","<p>The mechanism that processes async callbacks in phases: <strong>timers</strong> (setTimeout) â†’ <strong>pending callbacks</strong> â†’ <strong>poll</strong> (I/O) â†’ <strong>check</strong> (setImmediate) â†’ <strong>close</strong>. <code>process.nextTick</code> and Promise microtasks run between each phase.</p>"],
+["Node.js","I","What is middleware in Express?","<p>Functions with access to <code>(req, res, next)</code> that run in order during the request-response cycle â€” used for auth, logging, parsing, validation. Call <code>next()</code> to pass control. <strong>Error middleware</strong> takes 4 args <code>(err, req, res, next)</code>.</p>"],
+["Node.js","I","How do you build a REST API in Express?","<pre><code>const app = express();\napp.use(express.json());\napp.get('/users', (req, res) =&gt; res.json(users));\napp.post('/users', (req, res) =&gt; { /* create */ });\napp.listen(3000);</code></pre><p>Use proper HTTP verbs (GET/POST/PUT/DELETE) and status codes.</p>"],
+["Node.js","I","require (CommonJS) vs import (ES Modules)?","<p><code>require</code> â€“ CommonJS, synchronous, Node's traditional system. <code>import</code> â€“ ES Modules, static, needs <code>\"type\":\"module\"</code> in package.json or <code>.mjs</code>. ESM supports tree-shaking and top-level await.</p>"],
+["Node.js","I","How do you handle async errors?","<p>With <code>async/await</code> use <code>try/catch</code>; for Promises use <code>.catch()</code>. In Express, pass errors to <code>next(err)</code> so a central error-handling middleware responds. Wrap async routes in a helper to avoid repetition.</p>"],
+["Node.js","I","How do you manage environment variables?","<p>Store secrets/config in a <code>.env</code> file and load with the <strong>dotenv</strong> package into <code>process.env</code>. Never commit <code>.env</code> â€” add it to <code>.gitignore</code>.</p>"],
+["Node.js","I","What is JWT and how does auth work?","<p><strong>JSON Web Token</strong> â€” a signed token (header.payload.signature). Flow: user logs in â†’ server signs a token â†’ client stores it â†’ sends in <code>Authorization: Bearer</code> header â†’ middleware verifies it per request. <strong>Stateless</strong> (no server session).</p>"],
+["Node.js","A","process.nextTick vs setImmediate vs setTimeout?","<ul><li><code>process.nextTick</code> â€“ runs before the next event loop phase (highest priority)</li><li><code>setImmediate</code> â€“ runs in the check phase (after I/O)</li><li><code>setTimeout(fn, 0)</code> â€“ runs in the timers phase</li></ul>"],
+["Node.js","A","What are streams and buffers?","<p><strong>Streams</strong> process data in chunks instead of loading it all into memory (file reads, HTTP, piping) â€” Readable, Writable, Duplex, Transform. <strong>Buffer</strong> is a fixed-length chunk of raw binary data. Great for large files/video.</p>"],
+["Node.js","A","How do you scale a Node app?","<ul><li><strong>Cluster module / PM2</strong> â€“ use all CPU cores</li><li><strong>Load balancer</strong> (Nginx) across instances</li><li><strong>Caching</strong> (Redis)</li><li><strong>DB indexing &amp; pagination</strong></li><li>Offload heavy work to worker threads / queues</li></ul>"],
+["Node.js","A","How do you prevent common security issues?","<ul><li>Validate/sanitize input; use parameterized queries (SQL injection)</li><li><code>helmet</code> for secure headers, rate limiting</li><li>Hash passwords with <strong>bcrypt</strong></li><li>Use HTTPS, CORS config, and keep secrets in env vars</li></ul>"],
+["Node.js","A","What is the cluster module?","<p>Lets you fork multiple Node processes (workers) that share the same port, using all CPU cores for better throughput. PM2 is a production process manager that does this plus restarts, logs, and monitoring.</p>"],
+
+/* ============ MSSQL / SQL ============ */
+["MSSQL","B","What is a primary key vs foreign key?","<p><strong>Primary key</strong> â€“ uniquely identifies each row (unique, not null). <strong>Foreign key</strong> â€“ a column that references the primary key of another table, enforcing referential integrity.</p>"],
+["MSSQL","B","What is an index and why use it?","<p>A database structure that <strong>speeds up data retrieval</strong> (like a book index). Trade-off: faster reads but slightly slower writes and extra storage. <strong>Clustered</strong> = sorts the actual table (one per table); <strong>non-clustered</strong> = separate structure pointing to rows.</p>"],
+["MSSQL","B","What is a JOIN? Types?","<ul><li><strong>INNER JOIN</strong> â€“ only matching rows in both tables</li><li><strong>LEFT JOIN</strong> â€“ all left rows + matches (nulls if none)</li><li><strong>RIGHT JOIN</strong> â€“ all right rows + matches</li><li><strong>FULL JOIN</strong> â€“ all rows from both</li></ul>"],
+["MSSQL","B","WHERE vs HAVING?","<p><code>WHERE</code> filters <strong>rows before grouping</strong>; <code>HAVING</code> filters <strong>groups after GROUP BY</strong> (used with aggregates like COUNT, SUM).</p>"],
+["MSSQL","I","DELETE vs TRUNCATE vs DROP?","<ul><li><strong>DELETE</strong> â€“ removes rows (can use WHERE), logged, can rollback</li><li><strong>TRUNCATE</strong> â€“ removes all rows fast, resets identity, minimal logging</li><li><strong>DROP</strong> â€“ removes the entire table structure</li></ul>"],
+["MSSQL","I","What is a stored procedure?","<p>A precompiled set of SQL statements stored in the DB, called by name. Benefits: <strong>reusable, faster (cached plan), secure, reduces network traffic</strong>. Can take parameters.</p>"],
+["MSSQL","I","What is a view?","<p>A <strong>virtual table</strong> based on a saved query. Simplifies complex queries, restricts column access (security), and presents data without storing it. Updatable in limited cases.</p>"],
+["MSSQL","I","What are aggregate functions?","<p>Operate on sets of rows and return a single value: <code>COUNT</code>, <code>SUM</code>, <code>AVG</code>, <code>MIN</code>, <code>MAX</code> â€” usually with <code>GROUP BY</code>.</p>"],
+["MSSQL","I","What is normalization?","<p>Organizing data to <strong>reduce redundancy</strong> and improve integrity, through normal forms (1NF: atomic values; 2NF: no partial dependency; 3NF: no transitive dependency). Denormalization adds redundancy back for read performance.</p>"],
+["MSSQL","A","What is a CTE (Common Table Expression)?","<p>A temporary named result set defined with <code>WITH</code>, usable within one query â€” improves readability and supports <strong>recursion</strong> (e.g. hierarchies).</p><pre><code>WITH Sales AS (\n  SELECT region, SUM(amt) total FROM orders GROUP BY region\n)\nSELECT * FROM Sales WHERE total &gt; 1000;</code></pre>"],
+["MSSQL","A","What is a trigger?","<p>Special stored code that <strong>runs automatically</strong> on table events â€” <code>AFTER</code>/<code>INSTEAD OF</code> INSERT, UPDATE, DELETE. Used for auditing, enforcing rules, cascading changes. Use sparingly (hidden logic).</p>"],
+["MSSQL","A","What is a transaction? ACID?","<p>A unit of work that succeeds or fails as a whole (<code>BEGIN</code>/<code>COMMIT</code>/<code>ROLLBACK</code>). <strong>ACID</strong>: Atomicity, Consistency, Isolation, Durability â€” guarantees reliable processing.</p>"],
+["MSSQL","A","What are window functions?","<p>Perform calculations across a set of rows <strong>related to the current row</strong> without collapsing them, using <code>OVER()</code>. Examples: <code>ROW_NUMBER()</code>, <code>RANK()</code>, <code>SUM() OVER(PARTITION BY ...)</code>.</p>"],
+["MSSQL","A","How do you optimize a slow query?","<ul><li>Add proper <strong>indexes</strong> on filtered/joined columns</li><li>Check the <strong>execution plan</strong> for scans vs seeks</li><li>Select only needed columns (avoid <code>SELECT *</code>)</li><li>Avoid functions on indexed columns in WHERE</li><li>Use pagination; update statistics</li></ul>"],
+
+/* ============ WEB & REST ============ */
+["Web & REST","B","What is REST?","<p><strong>Representational State Transfer</strong> â€” an architectural style for APIs using standard HTTP methods on resources (URLs). Stateless, uses JSON, predictable verbs. Example: <code>GET /users/5</code>.</p>"],
+["Web & REST","B","Common HTTP methods?","<ul><li><strong>GET</strong> â€“ read</li><li><strong>POST</strong> â€“ create</li><li><strong>PUT</strong> â€“ replace/update</li><li><strong>PATCH</strong> â€“ partial update</li><li><strong>DELETE</strong> â€“ remove</li></ul>"],
+["Web & REST","B","Common HTTP status codes?","<ul><li><strong>200</strong> OK, <strong>201</strong> Created, <strong>204</strong> No Content</li><li><strong>301/302</strong> Redirect</li><li><strong>400</strong> Bad Request, <strong>401</strong> Unauthorized, <strong>403</strong> Forbidden, <strong>404</strong> Not Found</li><li><strong>500</strong> Server Error, <strong>503</strong> Unavailable</li></ul>"],
+["Web & REST","I","What is CORS?","<p><strong>Cross-Origin Resource Sharing</strong> â€” a browser security rule that blocks requests to a different origin unless the server sends allow headers (<code>Access-Control-Allow-Origin</code>). In Express, enable with the <code>cors</code> middleware.</p>"],
+["Web & REST","I","Authentication vs Authorization?","<p><strong>Authentication</strong> = who you are (login). <strong>Authorization</strong> = what you're allowed to do (permissions/roles). Auth first, then authz.</p>"],
+["Web & REST","I","Cookies vs localStorage vs sessionStorage?","<ul><li><strong>Cookies</strong> â€“ sent with every request, can be httpOnly/secure (good for auth)</li><li><strong>localStorage</strong> â€“ persists, ~5MB, not auto-sent, JS-accessible</li><li><strong>sessionStorage</strong> â€“ cleared when tab closes</li></ul>"],
+["Web & REST","I","GET vs POST?","<p><strong>GET</strong> â€“ retrieves data, params in URL, cacheable, idempotent, no body. <strong>POST</strong> â€“ sends data in the body, not cached, used to create/change. Never put sensitive data in GET URLs.</p>"],
+["Web & REST","A","What is an idempotent request?","<p>One that produces the same result no matter how many times it's called. GET, PUT, DELETE are idempotent; POST is not (repeating it creates duplicates). Important for safe retries.</p>"],
+["Web & REST","A","REST vs GraphQL?","<p><strong>REST</strong> â€“ fixed endpoints, can over/under-fetch. <strong>GraphQL</strong> â€“ single endpoint, client requests exactly the fields it needs. GraphQL reduces round-trips; REST is simpler and cache-friendly.</p>"],
+["Web & REST","A","How do you secure an API?","<ul><li>HTTPS everywhere</li><li>JWT/OAuth authentication + role-based authorization</li><li>Input validation &amp; rate limiting</li><li>CORS whitelist, secure headers (helmet)</li><li>Never expose secrets; use env vars</li></ul>"],
+
+/* ============ GIT ============ */
+["Git","B","What is Git?","<p>A distributed <strong>version control system</strong> that tracks code changes, enables branching, and lets teams collaborate. Every clone has the full history.</p>"],
+["Git","B","git merge vs git rebase?","<p><strong>merge</strong> â€“ combines branches, keeps history with a merge commit (non-destructive). <strong>rebase</strong> â€“ replays your commits on top of another branch for a linear history (rewrites commits). Don't rebase shared/public branches.</p>"],
+["Git","B","What is a pull request?","<p>A request to merge your branch into another (usually main) â€” lets teammates review, comment, and approve code before it's merged.</p>"],
+["Git","I","git fetch vs git pull?","<p><code>fetch</code> downloads remote changes but doesn't merge. <code>pull</code> = <code>fetch</code> + <code>merge</code> into your current branch.</p>"],
+["Git","I","How do you resolve a merge conflict?","<p>Git marks conflicting sections (<code>&lt;&lt;&lt;&lt;</code>/<code>====</code>/<code>&gt;&gt;&gt;&gt;</code>). Manually edit to keep the right code, remove markers, <code>git add</code> the file, then commit (or <code>--continue</code> for rebase).</p>"],
+["Git","I","What does git stash do?","<p>Temporarily saves uncommitted changes so you can switch branches with a clean tree, then restore them with <code>git stash pop</code>.</p>"],
+["Git","A","git reset vs git revert?","<p><strong>reset</strong> moves the branch pointer back (can lose commits; rewrites history â€” use locally). <strong>revert</strong> creates a new commit that undoes a previous one (safe for shared branches).</p>"],
+["Git","A","What is cherry-pick?","<p><code>git cherry-pick &lt;hash&gt;</code> applies a specific commit from one branch onto another, without merging the whole branch.</p>"],
+
+/* ============ HTML & CSS ============ */
+["HTML & CSS","B","What are semantic HTML tags?","<p>Tags that describe meaning, not just appearance: <code>&lt;header&gt;</code>, <code>&lt;nav&gt;</code>, <code>&lt;main&gt;</code>, <code>&lt;article&gt;</code>, <code>&lt;section&gt;</code>, <code>&lt;footer&gt;</code>. Better for accessibility and SEO.</p>"],
+["HTML & CSS","B","Block vs inline elements?","<p><strong>Block</strong> (div, p, h1) take full width and start on a new line. <strong>Inline</strong> (span, a, img) sit in the text flow and only take needed width. <code>inline-block</code> mixes both.</p>"],
+["HTML & CSS","B","What is the box model?","<p>Every element is a box: <strong>content â†’ padding â†’ border â†’ margin</strong>. <code>box-sizing: border-box</code> makes width include padding + border (easier layouts).</p>"],
+["HTML & CSS","I","Flexbox vs Grid?","<p><strong>Flexbox</strong> â€“ one-dimensional (row OR column), great for alignment/toolbars. <strong>Grid</strong> â€“ two-dimensional (rows AND columns), great for page layouts.</p>"],
+["HTML & CSS","I","position: relative vs absolute vs fixed vs sticky?","<ul><li><strong>relative</strong> â€“ offset from its normal spot</li><li><strong>absolute</strong> â€“ positioned to nearest positioned ancestor</li><li><strong>fixed</strong> â€“ positioned to the viewport (stays on scroll)</li><li><strong>sticky</strong> â€“ relative until a scroll threshold, then fixed</li></ul>"],
+["HTML & CSS","I","What is CSS specificity?","<p>The rule that decides which style wins: inline (1000) &gt; ID (100) &gt; class/attribute (10) &gt; element (1). <code>!important</code> overrides all (avoid it).</p>"],
+["HTML & CSS","A","How do you make a site responsive?","<ul><li>Fluid units (%, rem, vw) not fixed px</li><li><strong>Media queries</strong> for breakpoints</li><li>Flexbox/Grid for flexible layouts</li><li><code>&lt;meta name=viewport&gt;</code> tag</li><li>Mobile-first approach</li></ul>"],
+["HTML & CSS","A","Pseudo-class vs pseudo-element?","<p><strong>Pseudo-class</strong> targets a state: <code>:hover</code>, <code>:focus</code>, <code>:nth-child()</code>. <strong>Pseudo-element</strong> styles a part: <code>::before</code>, <code>::after</code>, <code>::first-line</code>.</p>"],
+
+/* ============ CODING ============ */
+["Coding","B","Check if a number is even or odd.","<pre><code>const isEven = n =&gt; n % 2 === 0;</code></pre>"],
+["Coding","B","Reverse a string.","<pre><code>const reverse = s =&gt; s.split('').reverse().join('');</code></pre>"],
+["Coding","B","Check if a string is a palindrome.","<pre><code>const isPalindrome = s =&gt;\n  s === s.split('').reverse().join('');</code></pre>"],
+["Coding","B","FizzBuzz (1 to n).","<pre><code>for (let i = 1; i &lt;= n; i++) {\n  if (i % 15 === 0) console.log('FizzBuzz');\n  else if (i % 3 === 0) console.log('Fizz');\n  else if (i % 5 === 0) console.log('Buzz');\n  else console.log(i);\n}</code></pre>"],
+["Coding","I","Find duplicates in an array.","<pre><code>const dups = arr =&gt;\n  arr.filter((v, i) =&gt; arr.indexOf(v) !== i);\n// or with a Set for counts</code></pre>"],
+["Coding","I","Remove duplicates from an array.","<pre><code>const unique = arr =&gt; [...new Set(arr)];</code></pre>"],
+["Coding","I","Find the max number in an array.","<pre><code>const max = arr =&gt; Math.max(...arr);\n// or arr.reduce((a,b) =&gt; a &gt; b ? a : b)</code></pre>"],
+["Coding","I","Count occurrences of chars in a string.","<pre><code>const count = s =&gt; [...s].reduce((acc, c) =&gt; {\n  acc[c] = (acc[c] || 0) + 1;\n  return acc;\n}, {});</code></pre>"],
+["Coding","A","Flatten a nested array.","<pre><code>const flat = arr =&gt; arr.flat(Infinity);\n// manual: reduce + recursion</code></pre>"],
+["Coding","A","Find two numbers that sum to a target.","<pre><code>function twoSum(arr, t) {\n  const seen = new Map();\n  for (let i = 0; i &lt; arr.length; i++) {\n    if (seen.has(t - arr[i])) return [seen.get(t-arr[i]), i];\n    seen.set(arr[i], i);\n  }\n}</code></pre><p>O(n) with a hash map.</p>"],
+["Coding","A","Find the first non-repeating character.","<pre><code>function firstUnique(s) {\n  for (const c of s)\n    if (s.indexOf(c) === s.lastIndexOf(c)) return c;\n  return null;\n}</code></pre>"],
+
+/* ============ HR / BEHAVIORAL ============ */
+["HR / Behavioral","B","Tell me about yourself.","<p>30â€“60 seconds: your role + experience â†’ key skills (Angular, Node, SQL) â†’ a notable project/achievement â†’ why you're excited about this role. Keep it professional and forward-looking.</p>"],
+["HR / Behavioral","B","Why do you want to join this company?","<p>Show you researched them: mention their tech stack/products, growth, and how the role fits your goals. Connect your skills to what they need. Avoid 'just need a job'.</p>"],
+["HR / Behavioral","B","What are your strengths and weaknesses?","<p><strong>Strength:</strong> back it with an example (problem-solving, quick learner). <strong>Weakness:</strong> pick a real but non-critical one and show how you're improving it.</p>"],
+["HR / Behavioral","I","Describe a challenging bug you fixed.","<p>Use <strong>STAR</strong>: Situation, Task, Action, Result. Explain the problem, how you debugged (logs, breakpoints, isolation), the fix, and the outcome. Show your reasoning.</p>"],
+["HR / Behavioral","I","How do you handle tight deadlines?","<p>Prioritize tasks, break work into chunks, communicate early about risks, and focus on the critical path. Give a real example where you delivered under pressure.</p>"],
+["HR / Behavioral","I","How do you stay updated with new tech?","<p>Docs, blogs, newsletters, YouTube, side projects, and official release notes (Angular/Node). Mention something you learned recently (Signals, standalone components).</p>"],
+["HR / Behavioral","A","Where do you see yourself in 3â€“5 years?","<p>Show ambition aligned with the company: growing into a senior/lead developer, deepening full-stack skills, mentoring, and taking ownership of larger systems.</p>"],
+["HR / Behavioral","A","Do you have any questions for us?","<p>Always say yes. Ask about: the team's dev workflow and code review process, tech stack decisions, growth opportunities, and what success looks like in the first 6 months.</p>"],
+
+/* ============ ANGULAR (more, most-asked) ============ */
+["Angular","B","What is metadata in Angular?","<p><strong>Simple:</strong> The info inside a decorator (<code>@Component</code>, <code>@NgModule</code>) that tells Angular how to process a class.</p><p>Example: <code>selector</code>, <code>template</code>, <code>declarations</code>, <code>providers</code> are metadata.</p>"],
+["Angular","B","*ngIf vs [hidden]?","<p><strong>*ngIf</strong> removes the element from the DOM. <strong>[hidden]</strong> keeps it in the DOM but hides it with CSS (<code>display:none</code>).</p><p><strong>Remember:</strong> ngIf = gone, hidden = invisible. Use ngIf when rarely shown, [hidden] when toggled often.</p>"],
+["Angular","B","What is @Input() and @Output()?","<p><strong>@Input</strong> passes data from parent â†’ child. <strong>@Output</strong> sends events from child â†’ parent via <code>EventEmitter</code>.</p><pre><code>@Input() name: string;\n@Output() selected = new EventEmitter&lt;number&gt;();\nthis.selected.emit(id);</code></pre><p><strong>Remember:</strong> Input = receive, Output = emit.</p>"],
+["Angular","B","What is the Angular Router?","<p>Angular's built-in navigation system â€” maps URL paths to components so the SPA shows different views without reloading. <code>&lt;router-outlet&gt;</code> is where routed components render; <code>routerLink</code> is the navigation link; <code>**</code> is the <strong>wildcard route</strong> for a 404/not-found page.</p>"],
+["Angular","B","What is a custom pipe?","<p>A pipe you create to transform data your own way. Implement <code>PipeTransform</code> with a <code>transform()</code> method.</p><pre><code>@Pipe({ name: 'truncate' })\nexport class TruncatePipe implements PipeTransform {\n  transform(v: string, n = 50) {\n    return v.length &gt; n ? v.slice(0,n)+'â€¦' : v;\n  }\n}</code></pre>"],
+["Angular","I","Pure vs impure pipe?","<p><strong>Pure (default):</strong> runs only when the input reference changes â€” fast. <strong>Impure (<code>pure:false</code>):</strong> runs on every change detection cycle â€” use for things like filtering live arrays, but costly.</p>"],
+["Angular","I","@ViewChild vs @ContentChild?","<p><strong>@ViewChild</strong> accesses an element/component in the component's <em>own</em> template. <strong>@ContentChild</strong> accesses content projected in via <code>&lt;ng-content&gt;</code>.</p><p><strong>Remember:</strong> View = my template, Content = projected from parent.</p>"],
+["Angular","I","What is FormBuilder?","<p>A helper service that makes building reactive forms shorter â€” instead of creating each <code>FormControl</code> manually, use <code>fb.group({...})</code>.</p><pre><code>this.fb.group({\n  email: ['', [Validators.required, Validators.email]]\n});</code></pre>"],
+["Angular","I","What is forRoot vs forChild?","<p><strong>forRoot():</strong> called once in the root module â€” registers singleton services + routes. <strong>forChild():</strong> used in feature modules â€” adds routes but no duplicate services. Prevents multiple service instances.</p>"],
+["Angular","I","What is trackBy in *ngFor?","<p>A function that tells Angular how to identify each item (by id) so it <strong>reuses DOM elements</strong> instead of re-rendering the whole list â€” big performance win.</p><pre><code>trackById(i, item) { return item.id; }\n// *ngFor=\"let x of list; trackBy: trackById\"</code></pre>"],
+["Angular","I","Can you use two structural directives on one element?","<p><strong>No</strong> â€” only one structural directive (<code>*ngIf</code>, <code>*ngFor</code>) per element. Wrap one in <code>&lt;ng-container&gt;</code>.</p><pre><code>&lt;ng-container *ngIf=\"show\"&gt;\n  &lt;div *ngFor=\"let i of items\"&gt;{{i}}&lt;/div&gt;\n&lt;/ng-container&gt;</code></pre>"],
+["Angular","I","What is the async pipe?","<p>Subscribes to an Observable/Promise in the template, shows the value, and <strong>auto-unsubscribes</strong> on destroy. Works perfectly with OnPush (no memory leaks, no manual subscribe).</p><pre><code>&lt;div *ngIf=\"users$ | async as users\"&gt;â€¦&lt;/div&gt;</code></pre>"],
+["Angular","I","What is multicasting in RxJS/Angular?","<p>Sharing <strong>one</strong> observable execution among many subscribers (instead of each subscriber triggering a new one). Done with <code>Subject</code>, <code>share()</code>, or <code>shareReplay()</code>.</p>"],
+["Angular","I","How do you provide a singleton service?","<p>Use <code>@Injectable({ providedIn: 'root' })</code> â€” one shared instance app-wide, and it's <strong>tree-shakable</strong> (removed if unused). This is the recommended way.</p>"],
+["Angular","A","What is ElementRef and Renderer2?","<p><strong>ElementRef</strong> wraps a native DOM element (direct access â€” risky). <strong>Renderer2</strong> is the safe way to manipulate the DOM â€” works with server-side rendering and avoids XSS.</p><p><strong>Remember:</strong> prefer Renderer2 over touching <code>nativeElement</code> directly.</p>"],
+["Angular","A","What is Zone.js?","<p>A library that <strong>patches async browser APIs</strong> (setTimeout, events, HTTP) so Angular knows when to run change detection automatically. Signals + zoneless mode (v16+) can replace it.</p>"],
+["Angular","A","detectChanges() vs markForCheck()?","<p><strong>detectChanges():</strong> runs change detection immediately (synchronous). <strong>markForCheck():</strong> marks the component to be checked in the <em>next</em> cycle (used with OnPush).</p>"],
+["Angular","A","What is ViewEncapsulation?","<p>Controls how component CSS is scoped: <strong>Emulated</strong> (default â€” styles scoped via attributes), <strong>None</strong> (global), <strong>ShadowDom</strong> (real browser shadow DOM isolation).</p>"],
+["Angular","A","What is SSR / Angular Universal?","<p><strong>Server-Side Rendering</strong> â€” Angular renders pages on the server and sends ready HTML. Benefits: faster first paint and better SEO. <strong>Hydration</strong> then makes that server HTML interactive without re-rendering it all.</p>"],
+["Angular","A","What is Angular Ivy?","<p>Angular's modern <strong>compilation and rendering engine</strong> (default since v9). Gives smaller bundles (better tree-shaking), faster builds, and improved debugging.</p>"],
+["Angular","A","What is tree shaking?","<p>A build-time process that <strong>removes unused code</strong> from the final bundle, making it smaller. Works best with <code>providedIn:'root'</code> services and ES modules.</p>"],
+["Angular","A","What is APP_INITIALIZER?","<p>A token to run code (e.g. load config/settings from an API) <strong>before the app starts</strong>. Returns a Promise/Observable Angular waits for during bootstrap.</p>"],
+["Angular","A","What is an InjectionToken?","<p>A type-safe token to inject <strong>non-class values</strong> (strings, config objects, constants) through DI, since you can't inject a plain interface or primitive directly.</p><pre><code>export const API_URL = new InjectionToken&lt;string&gt;('apiUrl');</code></pre>"],
+["Angular","A","What is Angular's XSS protection / Sanitization?","<p>Angular <strong>auto-sanitizes</strong> values bound to the DOM (strips dangerous scripts) to prevent XSS. Interpolation is safe by default. For trusted HTML, use <code>DomSanitizer</code> (<code>bypassSecurityTrustHtml</code>) â€” only with content you fully trust.</p>"],
+["Angular","A","What is TestBed?","<p>Angular's main <strong>testing utility</strong> â€” creates a test module to configure and instantiate components/services in isolation. Run tests with <code>ng test</code> (Karma/Jasmine).</p>"],
+
+/* ============ ANGULAR FILES & CONFIG ============ */
+["Angular Config","B","What does main.ts do? Can you rename it?","<p><strong>main.ts</strong> is the entry point â€” it bootstraps the root module/app (<code>bootstrapApplication</code> or <code>platformBrowserDynamic().bootstrapModule(AppModule)</code>). You can rename it, but must update the path in <code>angular.json</code>.</p>"],
+["Angular Config","B","What happens if you delete index.html?","<p>The app won't run â€” <strong>index.html</strong> is the single page that hosts the app and contains <code>&lt;app-root&gt;&lt;/app-root&gt;</code> where Angular renders. No host = nothing to display.</p>"],
+["Angular Config","B","Can an Angular project run without package.json?","<p><strong>No.</strong> It lists dependencies (Angular, RxJS, TypeScript) and scripts. Without it, <code>npm install</code> and <code>ng serve</code> fail because <code>node_modules</code> can't be built.</p>"],
+["Angular Config","B","What happens if node_modules is deleted? How to restore?","<p>The app won't run â€” all libraries are gone. Restore by running <code>npm install</code>, which reads <code>package.json</code>/<code>package-lock.json</code> and re-downloads everything.</p>"],
+["Angular Config","I","What does angular.json do?","<p>The <strong>CLI configuration file</strong> â€” defines build/serve/test settings, file paths (main, index, styles, assets), and environment file replacements. Delete it and CLI commands like <code>ng serve</code> fail.</p>"],
+["Angular Config","I","tsconfig.json vs tsconfig.app.json?","<p><strong>tsconfig.json</strong> = base/global TypeScript compiler options. <strong>tsconfig.app.json</strong> = extends it for the app only (excludes test files). Separating them keeps app, spec, and e2e configs clean.</p>"],
+["Angular Config","I","How does Angular pick environment.ts vs environment.prod.ts?","<p>Via <strong>fileReplacements</strong> in angular.json. Default build uses <code>environment.ts</code>; <code>ng build --configuration=production</code> swaps in <code>environment.prod.ts</code>. Used for different API URLs/keys per environment.</p>"],
+["Angular Config","I","What if BrowserModule isn't imported in AppModule?","<p>The app won't run in a browser â€” <strong>BrowserModule</strong> provides essentials like <code>*ngIf</code>, <code>*ngFor</code> (CommonModule) and browser rendering services. Import it <em>only</em> in the root module (feature modules use CommonModule).</p>"],
+
+/* ============ JAVASCRIPT (more, most-asked) ============ */
+["JavaScript","I","What is the Temporal Dead Zone (TDZ)?","<p>The period between entering a scope and the line where a <code>let</code>/<code>const</code> is declared. Accessing the variable there throws a <code>ReferenceError</code> â€” they're hoisted but not initialized.</p>"],
+["JavaScript","I","What is a first-class function?","<p>In JS, functions are <strong>values</strong> â€” you can store them in variables, pass them as arguments, and return them from other functions. That's what 'first-class' means.</p>"],
+["JavaScript","I","What is a higher-order function?","<p>A function that <strong>takes a function as an argument or returns one</strong>. Examples: <code>map</code>, <code>filter</code>, <code>reduce</code>, <code>setTimeout</code>.</p>"],
+["JavaScript","I","What is a pure function?","<p>A function that <strong>always returns the same output for the same input</strong> and has <strong>no side effects</strong> (doesn't change outside state). Easy to test and predict.</p>"],
+["JavaScript","I","What is currying?","<p>Transforming a function with multiple args into a chain of functions each taking one arg.</p><pre><code>const add = a =&gt; b =&gt; a + b;\nadd(2)(3); // 5</code></pre>"],
+["JavaScript","I","What is callback hell?","<p>Deeply nested callbacks (pyramid of doom) that make async code hard to read and maintain. Fix it with <strong>Promises</strong> or <strong>async/await</strong>.</p>"],
+["JavaScript","I","Object.freeze vs Object.seal?","<p><strong>freeze</strong> â€” can't add, remove, or change properties (fully immutable). <strong>seal</strong> â€” can't add/remove, but <em>can change</em> existing values.</p>"],
+["JavaScript","I","slice vs splice?","<p><strong>slice</strong> returns a copy of a portion â€” <em>doesn't</em> change the original. <strong>splice</strong> adds/removes items â€” <em>mutates</em> the original array.</p><p><strong>Remember:</strong> splice has a 'p' for 'permanent change'.</p>"],
+["JavaScript","I","What is optional chaining (?.)?","<p>Safely access nested properties without errors if something is null/undefined.</p><pre><code>user?.address?.city // undefined instead of throwing</code></pre>"],
+["JavaScript","I","What is the nullish coalescing operator (??)?","<p>Returns the right side only when the left is <strong>null or undefined</strong> (not for 0 or '' like <code>||</code> does).</p><pre><code>let x = value ?? 'default';</code></pre>"],
+["JavaScript","A","What is memoization?","<p>Caching a function's results so repeated calls with the same input return instantly from the cache instead of recomputing. Speeds up expensive functions.</p>"],
+["JavaScript","A","What is strict mode?","<p><code>'use strict'</code> enables stricter parsing â€” catches silent errors (undeclared variables), disables unsafe features, and makes code safer. Modules/classes use it by default.</p>"],
+["JavaScript","A","What is the same-origin policy?","<p>A browser security rule that restricts a page from accessing resources on a <strong>different origin</strong> (protocol + domain + port). CORS is how servers safely relax it.</p>"],
+["JavaScript","A","Web Worker vs Service Worker?","<p><strong>Web Worker</strong> runs heavy JS on a background thread (no DOM access) to keep the UI responsive. <strong>Service Worker</strong> acts as a network proxy â€” enables offline caching and push notifications (core to PWAs).</p>"],
+
+/* ============ HTML & CSS (more, most-asked) ============ */
+["HTML & CSS","B","What is the <!DOCTYPE> declaration?","<p>Tells the browser to render in <strong>standards mode</strong> using the latest HTML spec. <code>&lt;!DOCTYPE html&gt;</code> is the HTML5 version. Missing it triggers quirks mode (inconsistent rendering).</p>"],
+["HTML & CSS","B","What are void (self-closing) elements?","<p>Elements with no closing tag or content: <code>&lt;img&gt;</code>, <code>&lt;br&gt;</code>, <code>&lt;hr&gt;</code>, <code>&lt;input&gt;</code>, <code>&lt;meta&gt;</code>, <code>&lt;link&gt;</code>.</p>"],
+["HTML & CSS","I","What are data-* attributes?","<p>Custom attributes to store extra data on elements, accessed in JS via <code>element.dataset</code>.</p><pre><code>&lt;div data-user-id=\"5\"&gt;\n// el.dataset.userId â†’ \"5\"</code></pre>"],
+["HTML & CSS","I","defer vs async in script tags?","<p>Both download the script without blocking parsing. <strong>async</strong> runs it as soon as it's ready (order not guaranteed). <strong>defer</strong> runs after HTML is parsed, in order. Use defer for most app scripts.</p>"],
+["HTML & CSS","I","What are meta tags used for?","<p>Metadata in <code>&lt;head&gt;</code> â€” charset, viewport (responsive), description/keywords (SEO), and social previews (Open Graph). <code>viewport</code> is essential for mobile.</p>"],
+["HTML & CSS","I","What is ARIA / why is alt important?","<p><strong>ARIA</strong> attributes make dynamic UI accessible to screen readers (roles, labels, states). <code>alt</code> on <code>&lt;img&gt;</code> describes images for screen readers and shows if the image fails â€” key for accessibility and SEO.</p>"],
+["HTML & CSS","A","What is the Shadow DOM / Web Components?","<p><strong>Shadow DOM</strong> gives an element an isolated, encapsulated DOM + styles (no leaks). <strong>Web Components</strong> use custom elements, Shadow DOM, and <code>&lt;template&gt;</code>/<code>&lt;slot&gt;</code> to build reusable framework-independent components.</p>"],
+["HTML & CSS","B","em vs rem vs % vs px?","<ul><li><strong>px</strong> â€“ fixed absolute size</li><li><strong>em</strong> â€“ relative to parent's font-size</li><li><strong>rem</strong> â€“ relative to root font-size (predictable)</li><li><strong>%</strong> â€“ relative to parent's size</li></ul>"],
+["HTML & CSS","B","visibility:hidden vs display:none?","<p><strong>visibility:hidden</strong> â€” hidden but still takes up space. <strong>display:none</strong> â€” removed from layout, takes no space.</p>"],
+["HTML & CSS","I","How does z-index / stacking context work?","<p><code>z-index</code> controls stacking order (higher = front) but only on <strong>positioned</strong> elements. A new <strong>stacking context</strong> is created by position + z-index, opacity &lt; 1, transform, etc., and children stack within it.</p>"],
+["HTML & CSS","I","What are CSS variables (custom properties)?","<p>Reusable values defined with <code>--name</code> and used with <code>var()</code>. Unlike SASS variables they're <strong>live at runtime</strong> (can change with JS/themes).</p><pre><code>:root { --brand: #0a6b5b; }\ncolor: var(--brand);</code></pre>"],
+["HTML & CSS","I","Transitions vs animations?","<p><strong>Transition</strong> animates between two states on a trigger (hover). <strong>Animation</strong> uses <code>@keyframes</code> for multi-step, looping, self-running motion.</p>"],
+["HTML & CSS","I","What is BEM?","<p><strong>Block Element Modifier</strong> â€” a CSS naming convention for maintainable styles: <code>.card</code> (block), <code>.card__title</code> (element), <code>.card--featured</code> (modifier).</p>"],
+["HTML & CSS","I","CSS vs SCSS/SASS?","<p>SCSS is a CSS <strong>preprocessor</strong> adding variables, nesting, <strong>mixins</strong> (reusable style blocks), functions, and partials â€” compiled to plain CSS. Makes large stylesheets DRY and organized.</p>"],
+["HTML & CSS","I","What do the >, +, ~ combinators mean?","<ul><li><code>A B</code> â€“ descendant</li><li><code>A &gt; B</code> â€“ direct child</li><li><code>A + B</code> â€“ adjacent sibling (next one)</li><li><code>A ~ B</code> â€“ general siblings</li></ul>"],
+["HTML & CSS","A","What is :not() vs :is()?","<p><strong>:not(x)</strong> selects everything except x. <strong>:is(a, b)</strong> matches any in the list (shorter grouping). Example: <code>:is(h1,h2,h3)</code> styles all headings at once.</p>"],
+["HTML & CSS","A","How does calc() work?","<p>Does math mixing units right in CSS.</p><pre><code>width: calc(100% - 60px);</code></pre><p>Great for responsive layouts (e.g. full width minus a sidebar).</p>"],
+["HTML & CSS","A","How do you make a CSS-only dark mode?","<p>Define color tokens as CSS variables and override them under <code>@media (prefers-color-scheme: dark)</code> (or a <code>[data-theme]</code> attribute). No JS needed for the system preference.</p>"],
+];
+
+// ---------- RENDER ----------
+const TOPICS = [...new Set(DATA.map(d => d[0]))];
+const LVL_NAME = { B:"Basic", I:"Intermediate", A:"Advanced" };
+const state = { q:"", topics:new Set(TOPICS), lvls:new Set(["B","I","A"]), test:false };
+
+// Topic filter chips
+const tf = document.getElementById("topicFilters");
+const allChip = mkChip("All", true);
+allChip.dataset.topic = "__all";
+tf.appendChild(allChip);
+TOPICS.forEach(t => { const c = mkChip(t, true); c.dataset.topic = t; tf.appendChild(c); });
+
+function mkChip(label, pressed){ const b=document.createElement("button"); b.className="chip"; b.textContent=label; b.setAttribute("aria-pressed", pressed?"true":"false"); return b; }
+
+// Stats
+const statsEl = document.getElementById("stats");
+const byTopic = TOPICS.map(t => `<span class="stat"><b>${DATA.filter(d=>d[0]===t).length}</b> ${t}</span>`).join("");
+statsEl.innerHTML = `<span class="stat"><b>${DATA.length}</b> questions</span>` + byTopic;
+
+const listEl = document.getElementById("list");
+const noResult = document.getElementById("noresult");
+
+function render(){
+  const q = state.q.toLowerCase();
+  listEl.innerHTML = "";
+  let shown = 0;
+  TOPICS.forEach(topic => {
+    if(!state.topics.has(topic)) return;
+    const items = DATA.filter(d => d[0]===topic && state.lvls.has(d[1]) &&
+      (q==="" || (d[2]+d[3]).toLowerCase().includes(q)));
+    if(items.length===0) return;
+    shown += items.length;
+    const sec = document.createElement("section");
+    sec.innerHTML = `<div class="sec-head"><h2>${topic}</h2><span class="count">${items.length} question${items.length>1?"s":""}</span></div>`;
+    items.forEach((d,idx) => {
+      const [,lvl,ques,ans] = d;
+      const card = document.createElement("div");
+      card.className = "qa";
+      const qid = "a"+Math.random().toString(36).slice(2,8);
+      card.innerHTML =
+        `<button class="q" aria-expanded="false" aria-controls="${qid}">`+
+          `<span class="num">${String(idx+1).padStart(2,"0")}</span>`+
+          `<span class="qt">${ques}</span>`+
+          `<span class="lvl ${lvl}">${LVL_NAME[lvl]}</span>`+
+          `<span class="caret">â–¶</span>`+
+        `</button>`+
+        `<div class="ans" id="${qid}" hidden>${ans}</div>`;
+      const btn = card.querySelector(".q");
+      btn.addEventListener("click", () => toggleCard(card, btn));
+      sec.appendChild(card);
+    });
+    listEl.appendChild(sec);
+  });
+  noResult.style.display = shown===0 ? "block" : "none";
+  if(state.test) applyTest();
+}
+
+function toggleCard(card, btn){
+  const open = card.classList.toggle("open");
+  btn.setAttribute("aria-expanded", open?"true":"false");
+  card.querySelector(".ans").hidden = !open;
+}
+
+// Test mode: hide answers until clicked (default collapsed anyway) + hint
+const testBtn = document.getElementById("testMode");
+testBtn.addEventListener("click", () => {
+  state.test = !state.test;
+  testBtn.setAttribute("aria-pressed", state.test?"true":"false");
+  testBtn.textContent = state.test ? "ðŸ‘ Show mode" : "ðŸ™ˆ Test mode";
+  // collapse everything so user recalls first
+  document.querySelectorAll(".qa.open").forEach(c => { c.classList.remove("open"); c.querySelector(".q").setAttribute("aria-expanded","false"); c.querySelector(".ans").hidden = true; });
+});
+function applyTest(){}
+
+// Expand all toggle
+const expandBtn = document.getElementById("expandAll");
+let expanded = false;
+expandBtn.addEventListener("click", () => {
+  expanded = !expanded;
+  document.querySelectorAll(".qa").forEach(c => {
+    c.classList.toggle("open", expanded);
+    c.querySelector(".q").setAttribute("aria-expanded", expanded?"true":"false");
+    c.querySelector(".ans").hidden = !expanded;
+  });
+  expandBtn.textContent = expanded ? "Collapse all" : "Expand all";
+});
+
+// Search
+let st;
+document.getElementById("search").addEventListener("input", e => {
+  clearTimeout(st);
+  st = setTimeout(() => { state.q = e.target.value.trim(); render(); }, 120);
+});
+
+// Topic chips
+tf.addEventListener("click", e => {
+  const chip = e.target.closest(".chip"); if(!chip) return;
+  if(chip.dataset.topic === "__all"){
+    const turnOn = chip.getAttribute("aria-pressed")==="false" || state.topics.size<TOPICS.length;
+    state.topics = new Set(turnOn ? TOPICS : []);
+    [...tf.children].forEach(c => { if(c.dataset.topic!=="__all") c.setAttribute("aria-pressed", turnOn?"true":"false"); });
+    allChip.setAttribute("aria-pressed", turnOn?"true":"false");
+  } else {
+    const on = chip.getAttribute("aria-pressed")==="true";
+    if(on){ state.topics.delete(chip.dataset.topic); chip.setAttribute("aria-pressed","false"); }
+    else { state.topics.add(chip.dataset.topic); chip.setAttribute("aria-pressed","true"); }
+    allChip.setAttribute("aria-pressed", state.topics.size===TOPICS.length ? "true":"false");
+  }
+  render();
+});
+
+// Level chips
+document.querySelectorAll(".chip[data-lvl]").forEach(c => {
+  c.addEventListener("click", () => {
+    const l = c.dataset.lvl;
+    if(state.lvls.has(l)){ state.lvls.delete(l); c.setAttribute("aria-pressed","false"); }
+    else { state.lvls.add(l); c.setAttribute("aria-pressed","true"); }
+    render();
+  });
+});
+
+render();
+
+// ---------- AI MOCK INTERVIEW ----------
+(function(){
+  const $ = id => document.getElementById(id);
+  const overlay = $("mockOverlay");
+  let sample = null, current = null, askedCount = 0, scoreSum = 0, ctl = null;
+  const pool = () => {
+    const focus = $("mockTopic").value;
+    return DATA.filter(d => focus === "__all" || d[0] === focus);
+  };
+  const stripHtml = html => { const t = document.createElement("div"); t.innerHTML = html; return (t.textContent||"").replace(/\s+/g," ").trim(); };
+
+  // Try to enable the feature
+  (async () => {
+    try {
+      sample = window.claude && await claude.use("sample");
+    } catch(e){ sample = null; }
+    if(sample){ $("startMock").hidden = false; }
+  })();
+
+  // Build focus dropdown
+  const sel = $("mockTopic");
+  sel.innerHTML = '<option value="__all">All topics (mixed)</option>' +
+    [...new Set(DATA.map(d=>d[0]))].map(t=>`<option value="${t}">${t}</option>`).join("");
+
+  function nextQuestion(){
+    const list = pool();
+    current = list[Math.floor(Math.random()*list.length)];
+    $("mockQTopic").textContent = current[0];
+    const lvlEl = $("mockQLvl");
+    lvlEl.className = "lvl " + current[1];
+    lvlEl.textContent = {B:"Basic",I:"Intermediate",A:"Advanced"}[current[1]];
+    $("mockQ").innerHTML = current[2];
+    $("mockInput").value = "";
+    $("mockFeedback").hidden = true;
+    $("mockErr").hidden = true;
+    $("mockThinking").hidden = true;
+    $("mockSubmit").disabled = false;
+    $("mockInput").focus();
+  }
+
+  function openMock(){
+    if(!sample){ return; }
+    overlay.hidden = false;
+    document.body.style.overflow = "hidden";
+    if(!current) nextQuestion();
+  }
+  function closeMock(){ overlay.hidden = true; document.body.style.overflow = ""; ctl?.abort(); }
+
+  $("startMock").addEventListener("click", openMock);
+  $("mockClose").addEventListener("click", closeMock);
+  overlay.addEventListener("click", e => { if(e.target === overlay) closeMock(); });
+  document.addEventListener("keydown", e => { if(e.key==="Escape" && !overlay.hidden) closeMock(); });
+  $("mockSkip").addEventListener("click", nextQuestion);
+  $("mockNext").addEventListener("click", nextQuestion);
+  sel.addEventListener("change", nextQuestion);
+
+  const errCopy = {
+    not_granted: "You declined access to Claude, so AI feedback is off for now. Reload the page to enable it again.",
+    rate_limited: "Too many requests â€” give it a minute, then try again.",
+    refused: "Claude couldn't review that one. Try rephrasing your answer.",
+    invalid_json: "Hmm, the feedback came back garbled. Hit 'Get feedback' again.",
+    empty_completion: "No feedback came back â€” try adding a bit more detail to your answer.",
+  };
+
+  $("mockSubmit").addEventListener("click", async () => {
+    const answer = $("mockInput").value.trim();
+    if(!answer){ $("mockInput").focus(); return; }
+    if(!sample) return;
+    $("mockSubmit").disabled = true;
+    $("mockFeedback").hidden = true;
+    $("mockErr").hidden = true;
+    $("mockThinking").hidden = false;
+    ctl = new AbortController();
+
+    const prompt =
+      "You are a friendly but sharp technical interviewer for an Angular + Node.js developer role. "+
+      "Grade the candidate's answer as if in a real interview â€” encouraging but honest.\n\n"+
+      "QUESTION: " + stripHtml(current[2]) + "\n\n"+
+      "REFERENCE (ideal) ANSWER: " + stripHtml(current[3]) + "\n\n"+
+      "CANDIDATE'S ANSWER: " + answer + "\n\n"+
+      "Reply with ONLY a JSON object exactly like this:\n"+
+      '{"score": 7, "verdict": "Solid grasp, missing one detail", '+
+      '"strengths": ["point", "point"], "gaps": ["point"], "tip": "one line on how to phrase it better in the interview"}\n'+
+      "score is an integer 0-10. Keep each strength/gap under 14 words. If the answer is blank or off-topic, score low and say what to cover.";
+
+    try {
+      const fb = await sample.json(prompt, { modelTier: "quick", signal: ctl.signal });
+      $("mockThinking").hidden = true;
+      showFeedback(fb);
+    } catch(e){
+      $("mockThinking").hidden = true;
+      $("mockSubmit").disabled = false;
+      if(e.code === "cancelled") return;
+      const el = $("mockErr");
+      el.textContent = errCopy[e.code] || "Something went wrong getting feedback. Try again.";
+      el.hidden = false;
+      if(e.code === "not_granted"){ sample = null; }
+    }
+  });
+
+  function showFeedback(fb){
+    const score = Math.max(0, Math.min(10, Math.round(Number(fb.score)||0)));
+    askedCount++; scoreSum += score;
+    $("mockScoreTag").textContent = `Answered ${askedCount} Â· avg ${(scoreSum/askedCount).toFixed(1)}/10`;
+
+    $("mockScore").textContent = score;
+    const ring = $("mockRing");
+    const color = score>=7 ? "#16a34a" : score>=4 ? "var(--i)" : "var(--a)";
+    ring.style.setProperty("--ring", color);
+    ring.style.setProperty("--p", score*10);
+    $("mockVerdict").textContent = fb.verdict || "";
+
+    renderList("mockGood", "mockGoodWrap", fb.strengths);
+    renderList("mockGaps", "mockGapsWrap", fb.gaps);
+
+    const tip = (fb.tip||"").trim();
+    $("mockTip").innerHTML = tip ? "<b>ðŸ’¬ Say it better:</b> " + escapeHtml(tip) : "";
+    $("mockTip").style.display = tip ? "" : "none";
+
+    $("mockIdeal").innerHTML = current[3]; // the workbook's own ideal answer (HTML)
+    $("mockFeedback").hidden = false;
+    $("mockFeedback").scrollIntoView({ behavior:"smooth", block:"nearest" });
+  }
+
+  function renderList(ulId, wrapId, arr){
+    const ul = $(ulId);
+    ul.innerHTML = "";
+    const items = Array.isArray(arr) ? arr.filter(x=>x && String(x).trim()) : [];
+    if(items.length===0){ $(wrapId).style.display = "none"; return; }
+    $(wrapId).style.display = "";
+    items.forEach(x => { const li = document.createElement("li"); li.textContent = String(x); ul.appendChild(li); });
+  }
+  function escapeHtml(s){ const d=document.createElement("div"); d.textContent=s; return d.innerHTML; }
+})();
+</script>
+
+</body>
+</html>
+
